@@ -1,0 +1,146 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (required)
+    //   - email: string (required, email format)
+    //   - school: string (optional)
+    //   - grade: string (optional, enum)
+    //   - subjects: list (optional)
+    //   - studyTimes: list (optional)
+    //   - points: number (required)
+    //   - streak: number (required)
+    //   - lastActive: string (required, date-time)
+    //   - onboardingCompleted: bool (required)
+    //
+    // Collection: challenges
+    // Document ID: {challengeId}
+    // Fields:
+    //   - id: string (required)
+    //   - title: string (required)
+    //   - description: string (required)
+    //   - points: number (required)
+    //   - type: string (required, enum)
+    //   - grade: string (optional)
+    //
+    // Collection: userChallenges
+    // Document ID: {userChallengeId}
+    // Fields:
+    //   - userId: string (required)
+    //   - challengeId: string (required)
+    //   - completed: bool (required)
+    //   - completedAt: string (optional, date-time)
+    //   - date: string (required, date)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.get('email', '') == "ayoubjgnygj@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin'));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'displayName', 'email', 'onboardingCompleted']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             isValidEmail(data.email) &&
+             data.onboardingCompleted is bool &&
+             (!('isRegional' in data) || data.isRegional is bool) &&
+             (!('studyShift' in data) || data.studyShift in ['morning', 'afternoon', 'full']) &&
+             (!('favoriteSubjects' in data) || data.favoriteSubjects is list) &&
+             (!('struggles' in data) || data.struggles is string) &&
+             (!('studyPlan' in data) || data.studyPlan is string);
+    }
+
+    function isValidChallenge(data) {
+      return hasRequiredFields(['title', 'description', 'points', 'type']) &&
+             data.title is string && data.title.size() > 0 &&
+             data.description is string && data.description.size() > 0 &&
+             data.points is number &&
+             data.type in ['study', 'quiz', 'social'] &&
+             (!('isAI' in data) || data.isAI is bool) &&
+             (!('userId' in data) || data.userId is string);
+    }
+
+    function isValidUserChallenge(data) {
+      return hasRequiredFields(['userId', 'challengeId', 'completed', 'date']) &&
+             data.userId is string &&
+             data.challengeId is string &&
+             data.completed is bool &&
+             data.date is string && data.date.size() == 10;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{uid} {
+      allow read: if isAuthenticated(); // Allow reading for leaderboard and chat
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && 
+                      request.resource.data.uid == resource.data.uid &&
+                      request.resource.data.email == resource.data.email &&
+                      (request.resource.data.get('role', 'user') == resource.data.get('role', 'user') || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.text is string &&
+                      request.resource.data.text.size() > 0 &&
+                      request.resource.data.text.size() < 1000;
+      allow update, delete: if isAdmin();
+    }
+
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || (isAuthenticated() && request.resource.data.get('isAI', false) == true && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /userChallenges/{userChallengeId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidUserChallenge(request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && isValidUserChallenge(request.resource.data) &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.challengeId == resource.data.challengeId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+  }
+}
