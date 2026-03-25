@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType, addDoc, serverTimestamp, doc, updateDoc, getDocs, increment, arrayUnion, arrayRemove } from '../lib/firebase';
+import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType, addDoc, serverTimestamp, doc, updateDoc, getDocs, increment, arrayUnion, arrayRemove, getDoc } from '../lib/firebase';
 import { Challenge, UserChallenge, UserProfile } from '../types';
 import { format } from 'date-fns';
 import { generatePersonalizedChallenges } from '../services/geminiService';
 import { useNotifications } from './useNotifications';
+import { checkNewBadges, calculateLevel, BADGES } from '../lib/gamification';
 
 export function useChallenges(userId: string | undefined) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -72,16 +73,59 @@ export function useChallenges(userId: string | undefined) {
         };
         await addDoc(userChallengesRef, newUC);
 
-        // Update user points
+        // Update user points and gamification
         const challenge = challenges.find(c => c.id === challengeId);
         if (challenge) {
           const userRef = doc(db, 'users', userId);
-          await updateDoc(userRef, { points: increment(challenge.points) });
+          const userSnap = await getDoc(userRef);
           
-          sendNotification('إنجاز رائع! 🎉', {
-            body: `لقد أكملت "${challenge.title}" وحصلت على ${challenge.points} نقطة!`,
-            type: challenge.type === 'study' ? 'task' : 'challenge'
-          });
+          if (userSnap.exists()) {
+            const userData = userSnap.data() as UserProfile;
+            const newPoints = (userData.points || 0) + challenge.points;
+            const currentLevel = userData.level || 1;
+            const newLevel = calculateLevel(newPoints);
+            
+            // For total challenges, we can count userChallenges length + 1
+            const totalChallengesQuery = await getDocs(query(userChallengesRef, where('userId', '==', userId)));
+            const totalChallengesCompleted = totalChallengesQuery.size;
+
+            const newBadges = checkNewBadges(userData, newPoints, userData.streak || 0, totalChallengesCompleted);
+
+            const updates: any = {
+              points: newPoints,
+              level: newLevel,
+            };
+
+            if (newBadges.length > 0) {
+              updates.badges = arrayUnion(...newBadges);
+            }
+
+            await updateDoc(userRef, updates);
+            
+            sendNotification('إنجاز رائع! 🎉', {
+              body: `لقد أكملت "${challenge.title}" وحصلت على ${challenge.points} نقطة!`,
+              type: challenge.type === 'study' ? 'task' : 'challenge'
+            });
+
+            if (newLevel > currentLevel) {
+              setTimeout(() => {
+                sendNotification('مستوى جديد! 🚀', {
+                  body: `تهانينا! لقد وصلت إلى المستوى ${newLevel}! استمر في التألق.`,
+                  type: 'challenge'
+                });
+              }, 1500);
+            }
+
+            if (newBadges.length > 0) {
+              setTimeout(() => {
+                const badgeNames = newBadges.map(id => BADGES.find(b => b.id === id)?.name).join(' و ');
+                sendNotification('شارة جديدة! 🏅', {
+                  body: `لقد حصلت على شارة: ${badgeNames}!`,
+                  type: 'challenge'
+                });
+              }, 3000);
+            }
+          }
         }
       }
     } catch (err) {

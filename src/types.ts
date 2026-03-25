@@ -15,6 +15,8 @@ export interface UserProfile {
   studyPlan?: string; // AI generated plan
   points: number;
   streak: number;
+  level: number;
+  badges: string[];
   lastActive: string;
   onboardingCompleted: boolean;
 }

@@ -20,11 +20,13 @@ export async function generatePersonalizedChallenges(profile: UserProfile): Prom
     You are an AI study coach for Moroccan students. 
     Generate 3 personalized study tasks/challenges for a student with the following profile:
     - Grade: ${profile.grade || 'Baccalaureate'}
-    - Subjects: ${profile.subjects?.join(', ') || 'General'}
+    - Favorite Subjects: ${profile.favoriteSubjects?.join(', ') || 'General'}
     - Preferred Study Times: ${profile.studyTimes?.join(', ') || 'Anytime'}
     - Diagnosis/Assessment: ${profile.diagnosis || 'General improvement'}
+    - Struggles: ${profile.struggles || 'None'}
 
     The tasks should be practical, time-bound (e.g., 30-60 mins), and relevant to the Moroccan curriculum (Baccalaureate/Regional).
+    Make sure to prioritize their favorite subjects to keep them motivated, but also include tasks to help with their struggles.
     Return the response in JSON format as an array of objects with the following properties:
     - title (string, in Arabic)
     - description (string, in Arabic)

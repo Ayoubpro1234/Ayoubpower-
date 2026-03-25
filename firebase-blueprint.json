@@ -14,6 +14,8 @@
         "studyTimes": { "type": "array", "items": { "type": "string" }, "description": "Preferred study hours (e.g., 'Morning', 'Afternoon', 'Evening')" },
         "points": { "type": "integer", "description": "Total points earned" },
         "streak": { "type": "integer", "description": "Current daily streak" },
+        "level": { "type": "integer", "description": "User's current level" },
+        "badges": { "type": "array", "items": { "type": "string" }, "description": "Array of earned badge IDs" },
         "lastActive": { "type": "string", "format": "date-time", "description": "Last time the user was active" },
         "onboardingCompleted": { "type": "boolean", "description": "Whether the user has completed onboarding" }
       },

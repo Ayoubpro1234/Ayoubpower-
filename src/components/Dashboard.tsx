@@ -4,11 +4,13 @@ import { useChallenges } from '../hooks/useChallenges';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { Trophy, Zap, Flame, CheckCircle2, Circle, ArrowRight, Video, Instagram, Plus, Sparkles, Brain, Share2 } from 'lucide-react';
+import { Trophy, Zap, Flame, CheckCircle2, Circle, ArrowRight, Video, Instagram, Plus, Sparkles, Brain, Share2, Star, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { db, doc, updateDoc } from '../lib/firebase';
 import { useNotifications } from '../hooks/useNotifications';
+import { Stories } from './Stories';
+import { BADGES, getNextLevelPoints } from '../lib/gamification';
 
 export function Dashboard() {
   const { profile } = useAuth();
@@ -86,6 +88,14 @@ export function Dashboard() {
 
   const dailyChallenges = challenges.slice(0, 3); // Just show 3 for now
 
+  const currentLevel = profile?.level || 1;
+  const nextLevelPoints = getNextLevelPoints(currentLevel);
+  const currentPoints = profile?.points || 0;
+  const prevLevelPoints = currentLevel > 1 ? getNextLevelPoints(currentLevel - 1) : 0;
+  const progressPercentage = Math.min(100, Math.max(0, ((currentPoints - prevLevelPoints) / (nextLevelPoints - prevLevelPoints)) * 100));
+
+  const userBadges = profile?.badges || [];
+
   return (
     <div className="space-y-12" dir="rtl">
       {/* Welcome Section */}
@@ -115,6 +125,11 @@ export function Dashboard() {
         </div>
       </section>
 
+      {/* Stories Section (TikTok/Instagram style) */}
+      <section>
+        <Stories />
+      </section>
+
       {/* Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
@@ -135,6 +150,98 @@ export function Dashboard() {
             </Card>
           </motion.div>
         ))}
+      </section>
+
+      {/* Gamification: Level & Badges */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Level Progress */}
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <Card className="p-6 glass-card gold-border h-full flex flex-col justify-center">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-[#D4AF37]/10 rounded-full">
+                  <Star className="text-[#D4AF37]" size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">المستوى {currentLevel}</h3>
+                  <p className="text-sm text-white/60">{currentPoints} / {nextLevelPoints} نقطة</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-sm font-bold text-[#D4AF37]">المستوى التالي</p>
+                  <p className="text-2xl font-black text-white">{currentLevel + 1}</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => handleShare(`المستوى ${currentLevel}`, `لقد وصلت إلى المستوى ${currentLevel} في منصة أيوب باور بـ ${currentPoints} نقطة!`)}
+                  className="text-white/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  <Share2 size={20} />
+                </Button>
+              </div>
+            </div>
+            <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden border border-white/10">
+              <motion.div 
+                className="gold-bg h-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+            <p className="text-center text-sm text-white/50 mt-3 font-bold">
+              باقي {nextLevelPoints - currentPoints} نقطة للوصول للمستوى القادم!
+            </p>
+          </Card>
+        </motion.div>
+
+        {/* Badges */}
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+          <Card className="p-6 glass-card gold-border h-full">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <Award className="text-[#D4AF37]" size={24} />
+                <h3 className="text-xl font-black text-white">شارات الإنجاز</h3>
+              </div>
+              {userBadges.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => handleShare(`شارات الإنجاز`, `لقد جمعت ${userBadges.length} شارات في منصة أيوب باور! هل يمكنك التغلب علي؟`)}
+                  className="text-white/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  <Share2 size={20} />
+                </Button>
+              )}
+            </div>
+            
+            {userBadges.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center opacity-50">
+                <Trophy size={48} className="mb-2 text-white/20" />
+                <p className="font-bold text-white">لم تحصل على أي شارة بعد.</p>
+                <p className="text-sm">أكمل المهام لتبدأ في جمع الشارات!</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {userBadges.map(badgeId => {
+                  const badge = BADGES.find(b => b.id === badgeId);
+                  if (!badge) return null;
+                  return (
+                    <div 
+                      key={badge.id} 
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg ${badge.color} border border-white/10 shadow-sm`}
+                      title={badge.description}
+                    >
+                      <span className="text-xl">{badge.icon}</span>
+                      <span className="font-bold text-sm">{badge.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </motion.div>
       </section>
 
       {/* Main Content Grid */}

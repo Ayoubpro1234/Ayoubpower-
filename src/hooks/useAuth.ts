@@ -45,6 +45,8 @@ export function useAuth() {
         role: authUser.email === 'ayoubjgnygj@gmail.com' ? 'admin' : 'user',
         points: 0,
         streak: 0,
+        level: 1,
+        badges: [],
         lastActive: new Date().toISOString(),
         onboardingCompleted: false
       };
@@ -84,6 +86,8 @@ export function useAuth() {
       role: user.email === 'ayoubjgnygj@gmail.com' ? 'admin' : 'user',
       points: 0,
       streak: 0,
+      level: 1,
+      badges: [],
       lastActive: new Date().toISOString(),
       onboardingCompleted: true,
       ...data

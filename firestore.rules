@@ -17,6 +17,8 @@ service cloud.firestore {
     //   - studyTimes: list (optional)
     //   - points: number (required)
     //   - streak: number (required)
+    //   - level: number (required)
+    //   - badges: list (required)
     //   - lastActive: string (required, date-time)
     //   - onboardingCompleted: bool (required)
     //
@@ -80,6 +82,8 @@ service cloud.firestore {
              data.displayName is string && data.displayName.size() > 0 &&
              isValidEmail(data.email) &&
              data.onboardingCompleted is bool &&
+             (!('level' in data) || data.level is number) &&
+             (!('badges' in data) || data.badges is list) &&
              (!('isRegional' in data) || data.isRegional is bool) &&
              (!('studyShift' in data) || data.studyShift in ['morning', 'afternoon', 'full']) &&
              (!('favoriteSubjects' in data) || data.favoriteSubjects is list) &&
