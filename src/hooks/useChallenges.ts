@@ -183,6 +183,13 @@ export function useChallenges(userId: string | undefined) {
             grade: 'السنة الأولى باك'
           },
           {
+            title: 'مراجعة محاضرة (جامعي)',
+            description: 'قم بمراجعة آخر محاضرة وتلخيص أهم النقاط.',
+            points: 70,
+            type: 'study',
+            grade: 'طالب جامعي'
+          },
+          {
             title: 'تحدي المشاركة',
             description: 'شارك نصيحة دراسية في مجموعة التلغرام.',
             points: 20,

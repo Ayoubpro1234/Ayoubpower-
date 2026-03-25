@@ -41,32 +41,32 @@ export async function generatePersonalizedChallenges(profile: UserProfile): Prom
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              points: { type: Type.NUMBER },
-              type: { type: Type.STRING, enum: ['study', 'quiz'] },
-            },
-            required: ['title', 'description', 'points', 'type'],
-          },
-        },
       },
     });
 
-    const text = response.text;
+    let text = response.text;
     if (!text) return [];
     
-    const parsed = JSON.parse(text);
-    return parsed.map((item: any) => ({
-      ...item,
-      isAI: true,
-      userId: profile.uid,
-      grade: profile.grade
-    }));
+    // Remove markdown formatting if present
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return parsed.map((item: any) => {
+        const task: any = {
+          ...item,
+          isAI: true,
+          userId: profile.uid,
+        };
+        if (profile.grade) {
+          task.grade = profile.grade;
+        }
+        return task;
+      });
+    } catch (parseError) {
+      console.error("Failed to parse AI response as JSON:", text);
+      return [];
+    }
   } catch (error) {
     console.error("Error generating AI challenges:", error);
     return [];

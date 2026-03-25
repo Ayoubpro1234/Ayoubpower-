@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export function Leaderboard() {
   const [users, setUsers] = React.useState<UserProfile[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = React.useState<'all' | 'regional' | 'national' | 'university'>('all');
 
   React.useEffect(() => {
     const usersRef = collection(db, 'users');
@@ -28,6 +29,14 @@ export function Leaderboard() {
     return () => unsubscribe();
   }, []);
 
+  const filteredUsers = React.useMemo(() => {
+    if (filter === 'all') return users;
+    if (filter === 'regional') return users.filter(u => u.grade === 'السنة الأولى باك');
+    if (filter === 'national') return users.filter(u => u.grade === 'السنة الثانية باك');
+    if (filter === 'university') return users.filter(u => u.grade === 'طالب جامعي');
+    return users;
+  }, [users, filter]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8" dir="rtl">
       <div className="text-center space-y-4">
@@ -37,9 +46,16 @@ export function Leaderboard() {
         <p className="text-xl font-bold text-white/60">الترتيب العام لجميع الطلاب بناءً على النقاط.</p>
       </div>
 
+      <div className="flex justify-center gap-2 mb-8 flex-wrap">
+        <button onClick={() => setFilter('all')} className={`px-6 py-2 rounded-full font-bold transition-all ${filter === 'all' ? 'bg-[#D4AF37] text-black' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}>الكل</button>
+        <button onClick={() => setFilter('regional')} className={`px-6 py-2 rounded-full font-bold transition-all ${filter === 'regional' ? 'bg-[#D4AF37] text-black' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}>الجهوي (أولى باك)</button>
+        <button onClick={() => setFilter('national')} className={`px-6 py-2 rounded-full font-bold transition-all ${filter === 'national' ? 'bg-[#D4AF37] text-black' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}>الوطني (ثانية باك)</button>
+        <button onClick={() => setFilter('university')} className={`px-6 py-2 rounded-full font-bold transition-all ${filter === 'university' ? 'bg-[#D4AF37] text-black' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}>جامعي</button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {/* Top 3 Podium */}
-        {users.slice(0, 3).map((user, i) => {
+        {filteredUsers.slice(0, 3).map((user, i) => {
           const icons = [<Crown className="text-yellow-600" />, <Medal className="text-zinc-500" />, <Medal className="text-orange-600" />];
           const colors = ['border-[#D4AF37] bg-yellow-50', 'border-zinc-400 bg-zinc-100', 'border-orange-500 bg-orange-50'];
           
@@ -81,9 +97,11 @@ export function Leaderboard() {
         <CardContent className="p-0">
           {loading ? (
             <div className="p-12 text-center font-bold text-white/50">جاري تحميل الترتيب...</div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="p-12 text-center font-bold text-white/50">لا يوجد طلاب في هذا التصنيف حالياً.</div>
           ) : (
             <div className="divide-y divide-[#D4AF37]/10">
-              {users.slice(3).map((user, i) => (
+              {filteredUsers.slice(3).map((user, i) => (
                 <motion.div
                   key={user.uid}
                   initial={{ opacity: 0 }}

@@ -24,14 +24,24 @@ export function Onboarding() {
     studyPlan: '',
   });
 
-  const grades = ["السنة الأولى باك", "السنة الثانية باك", "السنة الأولى جامعة"];
+  const grades = ["السنة الأولى باك", "السنة الثانية باك", "طالب جامعي"];
   const shifts = [
     { id: 'morning', label: 'صباحي' },
     { id: 'afternoon', label: 'مسائي' },
     { id: 'full', label: 'يوم كامل' }
   ];
   const studyTimes = ["الصباح", "الظهيرة", "المساء", "الليل"];
-  const commonSubjects = ["الرياضيات", "الفيزياء", "الفلسفة", "اللغة الإنجليزية", "اللغة العربية", "علوم الحياة والأرض", "التربية الإسلامية", "الاجتماعيات", "اللغة الفرنسية"];
+
+  const getSubjectsByGrade = (grade: string) => {
+    if (grade === "السنة الأولى باك") {
+      return ["اللغة العربية", "اللغة الفرنسية", "التربية الإسلامية", "الاجتماعيات"];
+    } else if (grade === "السنة الثانية باك") {
+      return ["الرياضيات", "الفيزياء والكيمياء", "علوم الحياة والأرض", "الفلسفة", "اللغة الإنجليزية"];
+    } else if (grade === "طالب جامعي") {
+      return ["الرياضيات الجامعية", "الفيزياء الجامعية", "البرمجة وعلوم الحاسوب", "الاقتصاد والتدبير", "القانون", "الطب والصيدلة", "البيولوجيا والجيولوجيا", "الآداب والعلوم الإنسانية"];
+    }
+    return ["الرياضيات", "الفيزياء", "الفلسفة", "اللغة الإنجليزية", "اللغة العربية", "علوم الحياة والأرض", "التربية الإسلامية", "الاجتماعيات", "اللغة الفرنسية"];
+  };
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);
@@ -154,7 +164,7 @@ export function Onboarding() {
       icon: BookOpen,
       content: (
         <div className="grid grid-cols-2 gap-3">
-          {commonSubjects.map((subject) => (
+          {getSubjectsByGrade(formData.grade).map((subject) => (
             <button
               key={subject}
               onClick={() => toggleFavoriteSubject(subject)}

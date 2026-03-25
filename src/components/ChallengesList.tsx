@@ -68,7 +68,9 @@ export function ChallengesList() {
     <div className="space-y-8" dir="rtl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <h1 className="text-5xl font-black tracking-tighter text-white">
-          تحديات <span className="gold-text">{profile?.grade?.includes('الأولى') ? 'الجهوي' : 'الوطني'}</span> 🏆
+          تحديات <span className="gold-text">
+            {profile?.grade?.includes('الأولى') ? 'الجهوي' : profile?.grade?.includes('الثانية') ? 'الوطني' : 'الجامعة'}
+          </span> 🏆
         </h1>
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">

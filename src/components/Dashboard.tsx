@@ -21,8 +21,13 @@ export function Dashboard() {
   const handleGenerateAI = async () => {
     if (!profile) return;
     setIsGenerating(true);
-    await generateAITasks(profile);
-    setIsGenerating(false);
+    try {
+      await generateAITasks(profile);
+    } catch (error) {
+      console.error("Failed to generate AI tasks:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleShare = (title: string, description: string) => {
@@ -106,7 +111,7 @@ export function Dashboard() {
           </h1>
           <p className="text-xl font-bold text-white/60">
             مستعد لتحدي اليوم؟ لنواصل التقدم في {profile?.grade}.
-            {profile?.isRegional ? ' (تركيز على الجهوي 📚)' : ' (تركيز على الوطني 🎓)'}
+            {profile?.grade?.includes('الأولى') ? ' (تركيز على الجهوي 📚)' : profile?.grade?.includes('الثانية') ? ' (تركيز على الوطني 🎓)' : ' (تركيز على الجامعة 🎓)'}
           </p>
         </div>
         <div className="flex flex-wrap gap-4">

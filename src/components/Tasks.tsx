@@ -18,8 +18,13 @@ export function Tasks() {
   const handleGenerateAI = async () => {
     if (!profile) return;
     setIsGenerating(true);
-    await generateAITasks(profile);
-    setIsGenerating(false);
+    try {
+      await generateAITasks(profile);
+    } catch (error) {
+      console.error("Failed to generate AI tasks:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleRemindMe = (taskTitle: string) => {
