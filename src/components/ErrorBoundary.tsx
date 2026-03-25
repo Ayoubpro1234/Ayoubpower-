@@ -1,6 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/Card';
-import { Button } from './ui/Button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -12,17 +10,17 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<any, any> {
-  state = {
+export class ErrorBoundary extends React.Component<Props, State> {
+  state: State = {
     hasError: false,
     error: null
   };
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error', error, errorInfo);
   }
 
@@ -37,37 +35,37 @@ export class ErrorBoundary extends React.Component<any, any> {
           if (parsedError.error) {
             errorMessage = `خطأ في قاعدة البيانات: ${parsedError.error}`;
           }
+        } else if (error?.toString()) {
+          errorMessage = error.toString();
         }
       } catch (e) {
-        // Not a JSON error
+        if (error?.message) {
+          errorMessage = error.message;
+        }
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-[#F0F0F0]" dir="rtl">
-          <Card className="max-w-lg w-full p-12 text-center space-y-8">
-            <div className="w-24 h-24 bg-red-500 text-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto">
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backgroundColor: '#F0F0F0', direction: 'rtl', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ maxWidth: '32rem', width: '100%', backgroundColor: 'white', padding: '3rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', textAlign: 'center' }}>
+            <div style={{ width: '6rem', height: '6rem', backgroundColor: '#ef4444', color: 'white', border: '4px solid black', boxShadow: '8px 8px 0px 0px rgba(0,0,0,1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
               <AlertTriangle size={48} />
             </div>
-            <div>
-              <CardTitle className="text-4xl">عذراً، حدث خطأ!</CardTitle>
-              <CardDescription className="text-xl mt-4 font-bold opacity-70">
-                {errorMessage}
-              </CardDescription>
-            </div>
-            <Button 
-              size="lg" 
+            <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', color: 'black' }}>عذراً، حدث خطأ!</h1>
+            <p style={{ fontSize: '1.25rem', fontWeight: 'bold', opacity: 0.7, marginBottom: '2rem', color: 'black', wordBreak: 'break-word' }}>
+              {errorMessage}
+            </p>
+            <button 
               onClick={() => window.location.reload()} 
-              className="w-full flex items-center justify-center gap-4 text-2xl py-6"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', fontSize: '1.5rem', padding: '1.5rem', backgroundColor: 'black', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
             >
               <RefreshCw size={24} />
               تحديث الصفحة
-            </Button>
-          </Card>
+            </button>
+          </div>
         </div>
       );
     }
 
-    // @ts-ignore
     return this.props.children;
   }
 }

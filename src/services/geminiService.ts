@@ -1,7 +1,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, Challenge } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+let aiClient: GoogleGenAI | null = null;
+
+function getAI(): GoogleGenAI {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      console.error("GEMINI_API_KEY environment variable is missing. AI features will not work.");
+      throw new Error("GEMINI_API_KEY is missing");
+    }
+    aiClient = new GoogleGenAI({ apiKey: key });
+  }
+  return aiClient;
+}
 
 export async function generatePersonalizedChallenges(profile: UserProfile): Promise<Omit<Challenge, 'id'>[]> {
   const prompt = `
@@ -21,6 +33,7 @@ export async function generatePersonalizedChallenges(profile: UserProfile): Prom
   `;
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -75,6 +88,7 @@ export async function generateStudyPlan(profile: UserProfile): Promise<string> {
   `;
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -83,6 +97,6 @@ export async function generateStudyPlan(profile: UserProfile): Promise<string> {
     return response.text || "عذراً، لم نتمكن من توليد الخطة حالياً. حاول لاحقاً.";
   } catch (error) {
     console.error("Error generating AI study plan:", error);
-    return "حدث خطأ أثناء توليد الخطة الدراسية.";
+    return "حدث خطأ أثناء توليد الخطة الدراسية. يرجى التأكد من إعداد مفتاح API الخاص بـ Gemini.";
   }
 }
