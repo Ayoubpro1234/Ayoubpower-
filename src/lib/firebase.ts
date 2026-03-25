@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, doc, getDoc, getDocFromServer, collection, query, where, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, Timestamp, increment, orderBy, limit, arrayUnion, arrayRemove } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -7,6 +7,12 @@ import firebaseConfig from '../../firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Set persistence to LOCAL (survives browser restart)
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Error setting auth persistence:", error);
+});
+
 export const googleProvider = new GoogleAuthProvider();
 
 // Error handling helper
@@ -73,4 +79,4 @@ async function testConnection() {
 }
 testConnection();
 
-export { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, doc, getDoc, collection, query, where, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, Timestamp, increment, orderBy, limit, arrayUnion, arrayRemove };
+export { signInWithPopup, signOut, doc, getDoc, collection, query, where, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, Timestamp, increment, orderBy, limit, arrayUnion, arrayRemove };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { auth, db, googleProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, doc, getDoc, onSnapshot, setDoc, updateDoc, handleFirestoreError, OperationType } from '../lib/firebase';
+import { auth, db, googleProvider, signInWithPopup, signOut, doc, getDoc, onSnapshot, setDoc, updateDoc, handleFirestoreError, OperationType } from '../lib/firebase';
 import { UserProfile } from '../types';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
@@ -7,30 +7,9 @@ export function useAuth() {
   const [user, authLoading, error] = useAuthState(auth);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [redirectLoading, setRedirectLoading] = useState(true);
-
-  // Handle redirect result for mobile/PWA environments
-  useEffect(() => {
-    const checkRedirect = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          await handleUserAuth(result.user);
-        }
-      } catch (err: any) {
-        console.error('Redirect result error:', err);
-        if (err.code === 'auth/unauthorized-domain') {
-          alert('خطأ: النطاق (Domain) غير مصرح به. يرجى إضافة رابط Vercel إلى قائمة Authorized domains في إعدادات Firebase Authentication.');
-        }
-      } finally {
-        setRedirectLoading(false);
-      }
-    };
-    checkRedirect();
-  }, []);
 
   useEffect(() => {
-    if (authLoading || redirectLoading) return;
+    if (authLoading) return;
 
     if (!user) {
       setProfile(null);
@@ -52,7 +31,7 @@ export function useAuth() {
     });
 
     return () => unsubscribe();
-  }, [user, authLoading, redirectLoading]);
+  }, [user, authLoading]);
 
   const handleUserAuth = async (authUser: any) => {
     const userDocRef = doc(db, 'users', authUser.uid);
@@ -81,22 +60,14 @@ export function useAuth() {
 
   const login = async () => {
     try {
-      // Use popup for desktop, but fallback to redirect if needed or on mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        await handleUserAuth(result.user);
-      }
+      const result = await signInWithPopup(auth, googleProvider);
+      await handleUserAuth(result.user);
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.code === 'auth/unauthorized-domain') {
         alert('خطأ: النطاق (Domain) غير مصرح به. يرجى إضافة رابط Vercel إلى قائمة Authorized domains في إعدادات Firebase Authentication.');
       } else if (err.code === 'auth/popup-blocked') {
-        // Fallback to redirect if popup is blocked
-        await signInWithRedirect(auth, googleProvider);
+        alert('يرجى السماح بالنوافذ المنبثقة (Popups) لتسجيل الدخول.');
       }
     }
   };
@@ -127,7 +98,7 @@ export function useAuth() {
   return { 
     user, 
     profile, 
-    loading: authLoading || profileLoading || redirectLoading, 
+    loading: authLoading || profileLoading, 
     error, 
     login, 
     logout, 
