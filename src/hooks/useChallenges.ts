@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType, addDoc, serverTimestamp, doc, updateDoc, getDocs, increment } from '../lib/firebase';
+import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType, addDoc, serverTimestamp, doc, updateDoc, getDocs, increment, arrayUnion, arrayRemove } from '../lib/firebase';
 import { Challenge, UserChallenge, UserProfile } from '../types';
 import { format } from 'date-fns';
 import { generatePersonalizedChallenges } from '../services/geminiService';
+import { useNotifications } from './useNotifications';
 
 export function useChallenges(userId: string | undefined) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const { sendNotification } = useNotifications();
 
   useEffect(() => {
     if (!userId) return;
@@ -75,6 +77,11 @@ export function useChallenges(userId: string | undefined) {
         if (challenge) {
           const userRef = doc(db, 'users', userId);
           await updateDoc(userRef, { points: increment(challenge.points) });
+          
+          sendNotification('إنجاز رائع! 🎉', {
+            body: `لقد أكملت "${challenge.title}" وحصلت على ${challenge.points} نقطة!`,
+            type: challenge.type === 'study' ? 'task' : 'challenge'
+          });
         }
       }
     } catch (err) {
@@ -164,5 +171,23 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
-  return { challenges, userChallenges, loading, completeChallenge, seedChallenges, generateAITasks };
+  const toggleLike = async (challengeId: string) => {
+    if (!userId) return;
+    
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (!challenge) return;
+
+    const challengeRef = doc(db, 'challenges', challengeId);
+    const hasLiked = challenge.likes?.includes(userId);
+
+    try {
+      await updateDoc(challengeRef, {
+        likes: hasLiked ? arrayRemove(userId) : arrayUnion(userId)
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'challenges');
+    }
+  };
+
+  return { challenges, userChallenges, loading, completeChallenge, seedChallenges, generateAITasks, toggleLike };
 }

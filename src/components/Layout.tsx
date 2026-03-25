@@ -1,14 +1,16 @@
 import * as React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/Button';
-import { LogOut, User, LayoutDashboard, Video, Trophy, Menu, X, ListTodo, MessageSquare, Users } from 'lucide-react';
+import { LogOut, User, LayoutDashboard, Video, Trophy, Menu, X, ListTodo, MessageSquare, Users, Bell, BellRing } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNotifications } from '../hooks/useNotifications';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, profile, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
+  const { permission, requestPermission } = useNotifications();
 
   const navItems = [
     { name: 'الرئيسية', icon: LayoutDashboard, path: '/' },
@@ -56,6 +58,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span className="text-xs font-black uppercase opacity-50 text-white">النقاط</span>
                 <span className="font-black text-lg text-[#D4AF37]">{profile?.points || 0}</span>
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={requestPermission} 
+                className={`p-2 transition-colors ${permission === 'granted' ? 'text-[#D4AF37]' : 'text-white/50 hover:text-white'}`}
+                title={permission === 'granted' ? 'الإشعارات مفعلة' : 'تفعيل الإشعارات'}
+              >
+                {permission === 'granted' ? <BellRing size={20} /> : <Bell size={20} />}
+              </Button>
               <Button variant="ghost" size="sm" onClick={logout} className="p-2 text-white hover:text-[#D4AF37]">
                 <LogOut size={20} />
               </Button>
@@ -97,9 +108,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span className="text-sm font-black uppercase opacity-50 text-white">النقاط</span>
                   <span className="font-black text-3xl text-[#D4AF37]">{profile?.points || 0}</span>
                 </div>
-                <Button onClick={logout} className="bg-[#D4AF37] text-black hover:bg-[#D4AF37]/80">
-                  تسجيل الخروج
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={requestPermission} 
+                    className={`border-[#D4AF37] ${permission === 'granted' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'text-[#D4AF37] hover:bg-[#D4AF37]/10'}`}
+                  >
+                    {permission === 'granted' ? <BellRing size={24} /> : <Bell size={24} />}
+                  </Button>
+                  <Button onClick={logout} className="bg-[#D4AF37] text-black hover:bg-[#D4AF37]/80">
+                    تسجيل الخروج
+                  </Button>
+                </div>
               </div>
             </nav>
           </motion.div>

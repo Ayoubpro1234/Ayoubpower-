@@ -13,6 +13,7 @@ import { Chat } from './components/Chat';
 import { Leaderboard } from './components/Leaderboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { motion, AnimatePresence } from 'motion/react';
+import { Toaster } from 'sonner';
 
 export default function App() {
   const { user, profile, loading } = useAuth();
@@ -47,6 +48,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <Toaster position="top-center" richColors theme="dark" />
       <Router>
         <Layout>
           <AnimatePresence mode="wait">

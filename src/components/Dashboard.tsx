@@ -4,21 +4,36 @@ import { useChallenges } from '../hooks/useChallenges';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { Trophy, Zap, Flame, CheckCircle2, Circle, ArrowRight, Video, Instagram, Plus, Sparkles, Brain } from 'lucide-react';
+import { Trophy, Zap, Flame, CheckCircle2, Circle, ArrowRight, Video, Instagram, Plus, Sparkles, Brain, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { db, doc, updateDoc } from '../lib/firebase';
+import { useNotifications } from '../hooks/useNotifications';
 
 export function Dashboard() {
   const { profile } = useAuth();
   const { challenges, userChallenges, completeChallenge, loading, seedChallenges, generateAITasks } = useChallenges(profile?.uid);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const { sendNotification } = useNotifications();
 
   const handleGenerateAI = async () => {
     if (!profile) return;
     setIsGenerating(true);
     await generateAITasks(profile);
     setIsGenerating(false);
+  };
+
+  const handleShare = (title: string, description: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: `تحدي: ${title}`,
+        text: `${description}\nانضم إلي في هذا التحدي على منصة أيوب باور!`,
+        url: window.location.origin + '/challenges',
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(`تحدي: ${title}\n${description}\nانضم إلي في هذا التحدي على منصة أيوب باور!`);
+      alert('تم نسخ تفاصيل التحدي إلى الحافظة!');
+    }
   };
 
   React.useEffect(() => {
@@ -39,6 +54,29 @@ export function Dashboard() {
       seedChallenges();
     }
   }, [loading, challenges, seedChallenges, profile?.role]);
+
+  // Push notification for incomplete tasks
+  React.useEffect(() => {
+    if (!loading && challenges.length > 0) {
+      const incompleteTasks = challenges.filter(c => c.type === 'study' && !userChallenges.some(uc => uc.challengeId === c.id && uc.completed));
+      
+      if (incompleteTasks.length > 0) {
+        // Check if we already notified today
+        const lastNotified = localStorage.getItem('lastTaskNotification');
+        const today = new Date().toDateString();
+        
+        if (lastNotified !== today) {
+          setTimeout(() => {
+            sendNotification('تذكير بالمهام اليومية! 📚', {
+              body: `لديك ${incompleteTasks.length} مهام دراسية بانتظارك اليوم. لا تفوت سلسلة إنجازاتك!`,
+              type: 'task'
+            });
+            localStorage.setItem('lastTaskNotification', today);
+          }, 3000); // Delay slightly so it doesn't pop up instantly on load
+        }
+      }
+    }
+  }, [loading, challenges, userChallenges, sendNotification]);
 
   const stats = [
     { name: 'النقاط', value: profile?.points || 0, icon: Trophy, color: 'text-yellow-500' },
@@ -242,6 +280,18 @@ export function Dashboard() {
                             <p className="font-bold text-white/60">{challenge.description}</p>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShare(challenge.title, challenge.description);
+                          }}
+                          title="مشاركة التحدي"
+                        >
+                          <Share2 size={20} />
+                        </Button>
                       </div>
                     </Card>
                   </motion.div>

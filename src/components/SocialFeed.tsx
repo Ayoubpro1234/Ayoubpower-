@@ -2,10 +2,12 @@ import * as React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { Video, Instagram, Zap, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Video, Instagram, Zap, Heart, MessageCircle, Share2, Play } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function SocialFeed() {
+  const [playingVideoId, setPlayingVideoId] = React.useState<string | null>(null);
+
   const videos = [
     {
       id: '1',
@@ -13,6 +15,7 @@ export function SocialFeed() {
       description: 'أفضل النصائح لتنظيم الوقت والمذاكرة بفعالية مع أحمد أبو زيد.',
       platform: 'YouTube',
       url: 'https://www.youtube.com/watch?v=p60rN9n382s',
+      embedUrl: 'https://www.youtube.com/embed/p60rN9n382s?autoplay=1',
       thumbnail: 'https://img.youtube.com/vi/p60rN9n382s/hqdefault.jpg',
       likes: '250K',
       comments: '12K',
@@ -23,6 +26,7 @@ export function SocialFeed() {
       description: 'تعلم كيف تحفظ دروسك بسرعة البرق مع علي محمد علي.',
       platform: 'YouTube',
       url: 'https://www.youtube.com/watch?v=mY8S0W8zYyI',
+      embedUrl: 'https://www.youtube.com/embed/mY8S0W8zYyI?autoplay=1',
       thumbnail: 'https://img.youtube.com/vi/mY8S0W8zYyI/hqdefault.jpg',
       likes: '180K',
       comments: '8K',
@@ -33,6 +37,7 @@ export function SocialFeed() {
       description: 'كيف تراجع مادة كاملة في وقت قصير جداً وتضمن التفوق.',
       platform: 'YouTube',
       url: 'https://www.youtube.com/watch?v=Xv_vT8YvS-I',
+      embedUrl: 'https://www.youtube.com/embed/Xv_vT8YvS-I?autoplay=1',
       thumbnail: 'https://img.youtube.com/vi/Xv_vT8YvS-I/hqdefault.jpg',
       likes: '320K',
       comments: '15K',
@@ -43,6 +48,7 @@ export function SocialFeed() {
       description: 'كيف تحافظ على هدوئك وتحصل على أعلى الدرجات.',
       platform: 'YouTube',
       url: 'https://www.youtube.com/watch?v=8v_vT8YvS-I',
+      embedUrl: 'https://www.youtube.com/embed/8v_vT8YvS-I?autoplay=1',
       thumbnail: 'https://img.youtube.com/vi/8v_vT8YvS-I/hqdefault.jpg',
       likes: '95K',
       comments: '3K',
@@ -81,22 +87,38 @@ export function SocialFeed() {
           >
             <Card className="p-0 overflow-hidden group glass-card gold-border">
               <div className="aspect-video bg-zinc-800 relative overflow-hidden border-b border-[#D4AF37]/20">
-                <img 
-                  src={video.thumbnail} 
-                  alt={video.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center">
-                  <div className="w-20 h-20 bg-[#D4AF37] text-black rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-100 transition-transform">
-                    <Video size={40} fill="currentColor" />
-                  </div>
-                </div>
-                <div className="absolute top-4 right-4">
-                  <Badge className="gold-bg border-none text-xs py-1 px-3">
-                    {video.platform}
-                  </Badge>
-                </div>
+                {playingVideoId === video.id ? (
+                  <iframe
+                    src={video.embedUrl}
+                    title={video.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                ) : (
+                  <>
+                    <img 
+                      src={video.thumbnail} 
+                      alt={video.title} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-pointer"
+                      referrerPolicy="no-referrer"
+                      onClick={() => setPlayingVideoId(video.id)}
+                    />
+                    <div 
+                      className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center cursor-pointer"
+                      onClick={() => setPlayingVideoId(video.id)}
+                    >
+                      <div className="w-20 h-20 bg-[#D4AF37] text-black rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-100 transition-transform">
+                        <Play size={40} fill="currentColor" className="ml-2" />
+                      </div>
+                    </div>
+                    <div className="absolute top-4 right-4 pointer-events-none">
+                      <Badge className="gold-bg border-none text-xs py-1 px-3">
+                        {video.platform}
+                      </Badge>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="p-8">
                 <h3 className="text-3xl font-black mb-3 gold-text">{video.title}</h3>
@@ -113,12 +135,15 @@ export function SocialFeed() {
                       {video.comments}
                     </div>
                   </div>
-                  <a href={video.url} target="_blank" rel="noopener noreferrer">
-                    <Button className="gold-bg hover:opacity-90 text-black font-black px-8 py-6 text-lg rounded-xl border-none flex items-center gap-2">
+                  {playingVideoId !== video.id && (
+                    <Button 
+                      onClick={() => setPlayingVideoId(video.id)}
+                      className="gold-bg hover:opacity-90 text-black font-black px-8 py-6 text-lg rounded-xl border-none flex items-center gap-2"
+                    >
                       شاهد الآن
-                      <Share2 size={20} />
+                      <Play size={20} fill="currentColor" />
                     </Button>
-                  </a>
+                  )}
                 </div>
               </div>
             </Card>

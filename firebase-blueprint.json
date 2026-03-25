@@ -29,7 +29,8 @@
         "description": { "type": "string", "description": "Challenge description" },
         "points": { "type": "integer", "description": "Points awarded for completion" },
         "type": { "type": "string", "enum": ["study", "quiz", "social"], "description": "Type of challenge" },
-        "grade": { "type": "string", "description": "Target grade level (optional)" }
+        "grade": { "type": "string", "description": "Target grade level (optional)" },
+        "likes": { "type": "array", "items": { "type": "string" }, "description": "Array of user IDs who liked this challenge" }
       },
       "required": ["id", "title", "description", "points", "type"]
     },

@@ -36,6 +36,7 @@ export interface Challenge {
   grade?: string;
   isAI?: boolean;
   userId?: string; // If it's a personalized AI challenge
+  likes?: string[]; // Array of user IDs who liked this challenge
 }
 
 export interface UserChallenge {

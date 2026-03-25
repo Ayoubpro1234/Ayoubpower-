@@ -131,7 +131,8 @@ service cloud.firestore {
     match /challenges/{challengeId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin() || (isAuthenticated() && request.resource.data.get('isAI', false) == true && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']));
+      allow delete: if isAdmin();
     }
 
     match /userChallenges/{userChallengeId} {
